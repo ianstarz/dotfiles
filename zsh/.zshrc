@@ -3,6 +3,20 @@
 # Managed by GNU stow from ~/dotfiles
 # ============================================================================
 
+# --- Auto-attach to tmux dev session ----------------------------------------
+if [[ -z "$TMUX" ]] && [[ "$TERM_PROGRAM" != "vscode" ]]; then
+  exec dev-session
+fi
+
+# --- Oh My Zsh --------------------------------------------------------------
+export ZSH="$HOME/.oh-my-zsh"
+
+ZSH_THEME="robbyrussell"
+
+plugins=(git)
+
+source $ZSH/oh-my-zsh.sh
+
 # --- Homebrew ---------------------------------------------------------------
 if [[ -f /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -42,5 +56,4 @@ export EDITOR="code --wait"
 export CLAUDE_CONFIG_DIR="$HOME/.claude"
 
 # --- Path additions ---------------------------------------------------------
-# Add local bin for user-installed scripts
 export PATH="$HOME/.local/bin:$PATH"
