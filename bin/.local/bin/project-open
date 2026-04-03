@@ -57,11 +57,19 @@ if [[ ! -d "$PROJECT_PATH" ]]; then
         echo "Cloning $GH_USER/$selected..."
         gh repo clone "$GH_USER/$selected" "$PROJECT_PATH"
     else
-        echo "Creating new project: $selected"
+        echo "Initializing local project: $selected"
         mkdir -p "$PROJECT_PATH"
         git -C "$PROJECT_PATH" init
         git -C "$PROJECT_PATH" checkout -b main
+    fi
+fi
 
+# --- Ensure GitHub remote exists --------------------------------------------
+if ! git -C "$PROJECT_PATH" remote get-url origin &>/dev/null; then
+    if gh repo view "$GH_USER/$selected" &>/dev/null; then
+        echo "Linking to existing GitHub repo..."
+        git -C "$PROJECT_PATH" remote add origin "https://github.com/$GH_USER/$selected.git"
+    else
         echo "Creating GitHub repo: $GH_USER/$selected"
         gh repo create "$selected" --private --source="$PROJECT_PATH" --remote=origin
     fi
