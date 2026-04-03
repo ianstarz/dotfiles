@@ -115,6 +115,7 @@ BREW_FORMULAE=(
     stow
     tmux
     fzf
+    watch
     node
     python3
     go
