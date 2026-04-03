@@ -1,0 +1,63 @@
+{
+  "model": "opusplan",
+  "permissions": {
+    "allowedTools": [
+      "Bash(npm *)",
+      "Bash(pnpm *)",
+      "Bash(bun *)",
+      "Bash(git *)",
+      "Bash(node *)",
+      "Bash(npx *)",
+      "Bash(tsx *)",
+      "Bash(docker *)",
+      "Bash(supabase *)",
+      "Bash(uv *)",
+      "Bash(python *)",
+      "Bash(go *)",
+      "Bash(cargo *)",
+      "Bash(vercel *)",
+      "Bash(wrangler *)",
+      "Bash(gh *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(rm *)",
+      "Bash(echo *)",
+      "Bash(curl *)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "denyPatterns": [
+      ".env*",
+      "*.key",
+      "*.pem",
+      ".git/*"
+    ]
+  },
+  "respectGitIgnore": true,
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude needs your attention\" with title \"Claude Code\"'"
+          }
+        ]
+      }
+    ]
+  }
+}

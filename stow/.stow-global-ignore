@@ -1,0 +1,27 @@
+# Comments and blank lines are ignored.
+
+# Stow default ignores
+RCS
+.+,v
+
+CVS
+\.\#.+
+
+\.cvsignore
+
+\.svn
+_darcs
+\.hg
+
+\.git
+\.gitignore
+\.gitmodules
+
+.+~
+\#.*\#
+^/README.*
+^/LICENSE.*
+^/COPYING
+^/install\.sh
+^/Makefile
+\.DS_Store
