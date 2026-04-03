@@ -5,7 +5,7 @@
 
 # --- Auto-attach to tmux dev session ----------------------------------------
 if [[ -z "$TMUX" ]] && [[ "$TERM_PROGRAM" != "vscode" ]]; then
-  exec dev-session
+  exec "$HOME/.local/bin/dev-session"
 fi
 
 # --- Oh My Zsh --------------------------------------------------------------
