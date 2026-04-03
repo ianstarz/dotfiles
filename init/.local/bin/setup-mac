@@ -1,0 +1,393 @@
+#!/bin/bash
+# ============================================================================
+# Mac Development Powerhouse Setup Script
+# Full-stack + AI SaaS development with Claude Code
+#
+# Usage:   curl -fsSL https://raw.githubusercontent.com/ianstarz/dotfiles/main/init/.local/bin/setup-mac | bash
+#   or:    chmod +x setup-mac && ./setup-mac
+# Safe:    Idempotent — skips anything already installed. Safe to run twice.
+# ============================================================================
+
+set -euo pipefail
+
+# --- Colors & helpers -------------------------------------------------------
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+SCRIPT_START=$SECONDS
+LOG_FILE="$HOME/setup-mac.log"
+
+mkdir -p "$(dirname "$LOG_FILE")"
+exec > >(tee -a "$LOG_FILE") 2>&1
+echo "=== Setup started at $(date) ===" >> "$LOG_FILE"
+
+elapsed() {
+    local secs=$(( SECONDS - SCRIPT_START ))
+    printf "%dm %ds" $((secs / 60)) $((secs % 60))
+}
+
+step()  { echo -e "\n${BLUE}${BOLD}▸ $1${NC}  ${BLUE}[$(elapsed)]${NC}"; }
+ok()    { echo -e "  ${GREEN}✓${NC} $1"; }
+skip()  { echo -e "  ${YELLOW}⊘${NC} $1 (already installed)"; }
+warn()  { echo -e "  ${YELLOW}⚠${NC} $1"; }
+fail()  { echo -e "  ${RED}✗${NC} $1"; }
+info()  { echo -e "  $1"; }
+
+command_exists() { command -v "$1" &>/dev/null; }
+
+# --- Pre-flight checks ------------------------------------------------------
+echo -e "${BOLD}"
+echo "╔══════════════════════════════════════════════════╗"
+echo "║   Mac Development Powerhouse Setup               ║"
+echo "║   Full-stack + AI SaaS with Claude Code          ║"
+echo "╚══════════════════════════════════════════════════╝"
+echo -e "${NC}"
+
+if [[ "$(uname)" != "Darwin" ]]; then
+    fail "This script is for macOS only."
+    exit 1
+fi
+
+# ============================================================================
+# PHASE 1: Foundation
+# ============================================================================
+step "Phase 1: Foundation"
+
+# --- Xcode Command Line Tools -----------------------------------------------
+if xcode-select -p &>/dev/null; then
+    skip "Xcode Command Line Tools"
+else
+    info "Installing Xcode Command Line Tools..."
+    info ""
+    info "${BOLD}ACTION REQUIRED:${NC} A macOS dialog should appear asking to install."
+    info "Click ${BOLD}Install${NC}, then ${BOLD}Agree${NC} to the license."
+    info "This download can take 5-20 minutes depending on your connection."
+    info ""
+
+    xcode-select --install 2>/dev/null || true
+
+    XCODE_WAIT=0
+    XCODE_TIMEOUT=1800  # 30 minutes max
+    while ! xcode-select -p &>/dev/null; do
+        XCODE_WAIT=$((XCODE_WAIT + 10))
+        if (( XCODE_WAIT >= XCODE_TIMEOUT )); then
+            fail "Timed out after 30 minutes waiting for Xcode CLI Tools."
+            fail "Try installing manually: xcode-select --install"
+            fail "Then re-run this script."
+            exit 1
+        fi
+        if (( XCODE_WAIT % 30 == 0 )); then
+            info "  Still waiting for Xcode CLI Tools install... (${XCODE_WAIT}s elapsed)"
+            if ! pgrep -q "Install Command Line Developer Tools"; then
+                warn "The installer doesn't appear to be running."
+                warn "If the dialog was dismissed, re-run: ${BOLD}xcode-select --install${NC}"
+                warn "Or press Ctrl+C to abort and re-run this script after installing."
+            fi
+        fi
+        sleep 10
+    done
+    ok "Xcode Command Line Tools"
+fi
+
+# --- Homebrew ----------------------------------------------------------------
+if command_exists brew; then
+    skip "Homebrew"
+else
+    info "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    ok "Homebrew"
+fi
+
+# Ensure brew is on PATH for this session
+if [[ -f /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# --- Homebrew packages (formulae) -------------------------------------------
+step "Installing Homebrew packages"
+
+BREW_FORMULAE=(
+    git
+    stow
+    tmux
+    fzf
+    node
+    python3
+    go
+    rust
+    postgresql@16
+    redis
+    jq
+    gh
+    fnm
+    uv
+)
+
+for pkg in "${BREW_FORMULAE[@]}"; do
+    if brew list "$pkg" &>/dev/null; then
+        skip "$pkg"
+    else
+        info "Installing $pkg..."
+        if brew install "$pkg" 2>&1 | tail -3; then
+            ok "$pkg"
+        else
+            fail "$pkg — brew install failed"
+            warn "Continuing with remaining packages..."
+        fi
+    fi
+done
+
+# --- Homebrew casks ----------------------------------------------------------
+step "Installing applications (casks)"
+
+BREW_CASKS=(
+    warp
+    visual-studio-code
+    docker
+    raycast
+    tableplus
+)
+
+for cask in "${BREW_CASKS[@]}"; do
+    if brew list --cask "$cask" &>/dev/null; then
+        skip "$cask"
+    else
+        info "Installing $cask..."
+        if brew install --cask "$cask" 2>&1 | tail -3; then
+            ok "$cask"
+        else
+            fail "$cask — cask install failed"
+            warn "Continuing with remaining apps..."
+        fi
+    fi
+done
+
+# ============================================================================
+# PHASE 2: Node.js via fnm
+# ============================================================================
+step "Phase 2: Node.js version management (fnm)"
+
+eval "$(fnm env --shell bash 2>/dev/null || true)"
+
+if fnm list 2>/dev/null | grep -q 'v22'; then
+    skip "Node.js 22 LTS"
+else
+    info "Installing Node.js 22 LTS..."
+    fnm install 22
+    fnm default 22
+    ok "Node.js 22 LTS (set as default)"
+fi
+
+eval "$(fnm env --shell bash 2>/dev/null || true)"
+
+# --- Global npm packages ----------------------------------------------------
+step "Global npm packages"
+
+NPM_GLOBALS=(
+    pnpm
+    typescript
+    tsx
+    vercel
+    supabase
+    wrangler
+)
+
+for pkg in "${NPM_GLOBALS[@]}"; do
+    if npm list -g "$pkg" &>/dev/null 2>&1; then
+        skip "$pkg"
+    else
+        info "Installing $pkg..."
+        npm install -g "$pkg" 2>/dev/null
+        ok "$pkg"
+    fi
+done
+
+# ============================================================================
+# PHASE 3: Python via uv
+# ============================================================================
+step "Phase 3: Python setup (uv)"
+
+if uv python list 2>/dev/null | grep -q '3.12'; then
+    skip "Python 3.12"
+else
+    info "Installing Python 3.12 via uv..."
+    uv python install 3.12
+    ok "Python 3.12"
+fi
+
+# ============================================================================
+# PHASE 4: Claude Code
+# ============================================================================
+step "Phase 4: Claude Code"
+
+if command_exists claude; then
+    skip "Claude Code CLI"
+else
+    info "Installing Claude Code..."
+    curl -fsSL https://claude.ai/install.sh | bash
+    ok "Claude Code CLI"
+fi
+
+# ============================================================================
+# PHASE 5: Git & GitHub
+# ============================================================================
+step "Phase 5: Git & GitHub configuration"
+
+git_set() {
+    local key="$1" value="$2"
+    current=$(git config --global "$key" 2>/dev/null || echo "")
+    if [[ "$current" == "$value" ]]; then
+        skip "git $key"
+    else
+        git config --global "$key" "$value"
+        ok "git $key = $value"
+    fi
+}
+
+git_set "user.name" "Ian"
+git_set "user.email" "storzian@gmail.com"
+git_set "init.defaultBranch" "main"
+git_set "pull.rebase" "true"
+git_set "push.autoSetupRemote" "true"
+
+if [[ -f "$HOME/.ssh/id_ed25519" ]]; then
+    skip "SSH key (~/.ssh/id_ed25519)"
+else
+    info "Generating SSH key..."
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    ssh-keygen -t ed25519 -C "storzian@gmail.com" -f "$HOME/.ssh/id_ed25519" -N ""
+    eval "$(ssh-agent -s)" &>/dev/null
+    ssh-add "$HOME/.ssh/id_ed25519" 2>/dev/null
+    ok "SSH key generated at ~/.ssh/id_ed25519"
+    echo ""
+    warn "ACTION NEEDED: Add your SSH key to GitHub"
+    info "Run: ${BOLD}gh auth login${NC}  (select SSH when prompted)"
+    info "Or copy with: ${BOLD}pbcopy < ~/.ssh/id_ed25519.pub${NC}"
+fi
+
+if gh auth status &>/dev/null 2>&1; then
+    skip "GitHub CLI authentication"
+else
+    warn "GitHub CLI not authenticated yet — run: ${BOLD}gh auth login${NC}"
+fi
+
+# ============================================================================
+# PHASE 6: Dotfiles
+# ============================================================================
+step "Phase 6: Dotfiles"
+
+DOTFILES_DIR="$HOME/dotfiles"
+DOTFILES_REPO="https://github.com/ianstarz/dotfiles.git"
+
+if [[ -d "$DOTFILES_DIR/.git" ]]; then
+    skip "dotfiles repo (~/dotfiles)"
+else
+    info "Cloning dotfiles..."
+    git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+    ok "Cloned dotfiles to ~/dotfiles"
+fi
+
+STOW_PACKAGES=(zsh git tmux claude gh bin)
+
+for pkg in "${STOW_PACKAGES[@]}"; do
+    if stow -R -d "$DOTFILES_DIR" -t "$HOME" "$pkg" 2>/dev/null; then
+        ok "Stowed $pkg"
+    else
+        warn "Could not stow $pkg (may have conflicts — resolve manually with: stow -R $pkg)"
+    fi
+done
+
+# ============================================================================
+# PHASE 7: Oh My Zsh
+# ============================================================================
+step "Phase 7: Oh My Zsh"
+
+if [[ -d "$HOME/.oh-my-zsh" ]]; then
+    skip "Oh My Zsh"
+else
+    info "Installing Oh My Zsh (non-interactive, preserving dotfiles .zshrc)..."
+    RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    ok "Oh My Zsh"
+fi
+
+# ============================================================================
+# PHASE 8: Project Directory
+# ============================================================================
+step "Phase 8: Project directory"
+
+if [[ -d "$HOME/Projects" ]]; then
+    skip "~/Projects directory"
+else
+    mkdir -p "$HOME/Projects"
+    ok "Created ~/Projects"
+fi
+
+# ============================================================================
+# PHASE 9: VS Code Extensions
+# ============================================================================
+step "Phase 9: VS Code extensions"
+
+if command_exists code; then
+    VSCODE_EXTENSIONS=(
+        "anthropic.claude-code"
+        "dbaeumer.vscode-eslint"
+        "esbenp.prettier-vscode"
+        "bradlc.vscode-tailwindcss"
+        "prisma.prisma"
+    )
+
+    for ext in "${VSCODE_EXTENSIONS[@]}"; do
+        if code --list-extensions 2>/dev/null | grep -qi "$(echo "$ext" | cut -d. -f2)"; then
+            skip "$ext"
+        else
+            info "Installing $ext..."
+            code --install-extension "$ext" --force 2>/dev/null
+            ok "$ext"
+        fi
+    done
+else
+    warn "VS Code CLI (code) not in PATH"
+    info "Open VS Code → Cmd+Shift+P → 'Shell Command: Install code command'"
+    info "Then re-run this script to install extensions"
+fi
+
+# ============================================================================
+# PHASE 10: Summary
+# ============================================================================
+
+echo ""
+echo -e "${BOLD}"
+echo "╔══════════════════════════════════════════════════╗"
+echo "║   Setup complete!                                ║"
+echo "╚══════════════════════════════════════════════════╝"
+echo -e "${NC}"
+echo ""
+echo -e "${BOLD}Remaining manual steps:${NC}"
+echo ""
+
+TODOS=()
+
+if ! gh auth status &>/dev/null 2>&1; then
+    TODOS+=("  1. Authenticate GitHub CLI:  ${BOLD}gh auth login${NC}")
+fi
+
+if ! claude /status &>/dev/null 2>&1; then
+    TODOS+=("  2. Authenticate Claude Code: ${BOLD}claude${NC}  (opens browser)")
+fi
+
+TODOS+=("  3. Open Docker Desktop:      ${BOLD}open -a Docker${NC}")
+TODOS+=("  4. Reload your shell:        ${BOLD}source ~/.zshrc${NC}")
+TODOS+=("  5. Start building:           ${BOLD}cd ~/Projects && claude${NC}")
+
+for todo in "${TODOS[@]}"; do
+    echo -e "$todo"
+done
+
+echo ""
+echo -e "${GREEN}${BOLD}You're ready to build. 🚀${NC}"
+echo ""
