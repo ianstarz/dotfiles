@@ -57,3 +57,6 @@ export CLAUDE_CONFIG_DIR="$HOME/.claude"
 
 # --- Path additions ---------------------------------------------------------
 export PATH="$HOME/.local/bin:$PATH"
+
+# --- fzf --------------------------------------------------------------------
+source <(fzf --zsh)
