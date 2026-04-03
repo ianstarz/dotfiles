@@ -2,8 +2,8 @@
 # ============================================================================
 # Dotfiles Bootstrap Script
 #
-# Usage:  git clone https://github.com/ianstarz/dotfiles ~/dotfiles
-#         cd ~/dotfiles && ./install.sh
+# Usage:  git clone https://github.com/ianstarz/dotfiles ~/Projects/dotfiles
+#         cd ~/Projects/dotfiles && ./install.sh
 #
 # What it does:
 #   1. Installs Homebrew + GNU stow (if missing)
@@ -135,7 +135,7 @@ for pkg in "${PACKAGES[@]}"; do
         ok "$pkg"
     else
         fail "$pkg — stow failed"
-        info "Try: cd ~/dotfiles && stow --verbose --restow $pkg"
+        info "Try: cd ~/Projects/dotfiles && stow --verbose --restow $pkg"
     fi
 done
 
@@ -170,13 +170,13 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
             ok "Created and pushed to github.com/ianstarz/dotfiles"
         else
             warn "Could not create repo — you can do it manually:"
-            info "  gh repo create dotfiles --public --source=~/dotfiles --push"
+            info "  gh repo create dotfiles --public --source=~/Projects/dotfiles --push"
         fi
     fi
 else
     warn "GitHub CLI not authenticated — skipping repo creation"
     info "Run: ${BOLD}gh auth login${NC}"
-    info "Then: ${BOLD}gh repo create dotfiles --public --source=~/dotfiles --push${NC}"
+    info "Then: ${BOLD}gh repo create dotfiles --public --source=~/Projects/dotfiles --push${NC}"
 fi
 
 # ============================================================================
@@ -195,14 +195,14 @@ if $NEEDS_BACKUP; then
 fi
 echo ""
 echo -e "  ${BOLD}To add a new dotfile:${NC}"
-echo "    1. Create the file in ~/dotfiles/<package>/ mirroring its path from ~"
-echo "    2. Run: cd ~/dotfiles && stow --restow <package>"
+echo "    1. Create the file in ~/Projects/dotfiles/<package>/ mirroring its path from ~"
+echo "    2. Run: cd ~/Projects/dotfiles && stow --restow <package>"
 echo "    3. Commit and push"
 echo ""
 echo -e "  ${BOLD}To unstow (remove symlinks):${NC}"
-echo "    cd ~/dotfiles && stow --delete <package>"
+echo "    cd ~/Projects/dotfiles && stow --delete <package>"
 echo ""
 echo -e "  ${BOLD}On a new machine:${NC}"
-echo "    git clone https://github.com/ianstarz/dotfiles ~/dotfiles"
-echo "    cd ~/dotfiles && ./install.sh"
+echo "    git clone https://github.com/ianstarz/dotfiles ~/Projects/dotfiles"
+echo "    cd ~/Projects/dotfiles && ./install.sh"
 echo ""

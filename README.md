@@ -19,7 +19,7 @@ The script is idempotent — safe to run again anytime.
 If you've already run the setup and just need to re-stow after pulling changes:
 
 ```bash
-cd ~/dotfiles && ./install.sh
+cd ~/Projects/dotfiles && ./install.sh
 ```
 
 ## Packages
@@ -48,33 +48,33 @@ You can also launch it manually with `tm` or `dev-session`.
 
 ## How It Works
 
-Each top-level directory is a stow "package." Running `stow zsh` from `~/dotfiles` creates symlinks in `~` that mirror the package's directory structure:
+Each top-level directory is a stow "package." Running `stow zsh` from `~/Projects/dotfiles` creates symlinks in `~` that mirror the package's directory structure:
 
 ```
-~/dotfiles/zsh/.zshrc  ->  ~/.zshrc (symlink)
+~/Projects/dotfiles/zsh/.zshrc  ->  ~/.zshrc (symlink)
 ```
 
 ## Managing Dotfiles
 
 **Add a new file:**
 ```bash
-mkdir -p ~/dotfiles/newpkg/.config/tool
-mv ~/.config/tool/config.toml ~/dotfiles/newpkg/.config/tool/config.toml
-cd ~/dotfiles && stow newpkg
+mkdir -p ~/Projects/dotfiles/newpkg/.config/tool
+mv ~/.config/tool/config.toml ~/Projects/dotfiles/newpkg/.config/tool/config.toml
+cd ~/Projects/dotfiles && stow newpkg
 git add -A && git commit -m "Add newpkg config"
 ```
 
 **Stow a single package:**
 ```bash
-cd ~/dotfiles && stow --restow zsh
+cd ~/Projects/dotfiles && stow --restow zsh
 ```
 
 **Remove symlinks for a package:**
 ```bash
-cd ~/dotfiles && stow --delete zsh
+cd ~/Projects/dotfiles && stow --delete zsh
 ```
 
 **See what stow would do (dry run):**
 ```bash
-cd ~/dotfiles && stow --simulate --verbose zsh
+cd ~/Projects/dotfiles && stow --simulate --verbose zsh
 ```

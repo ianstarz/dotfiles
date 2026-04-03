@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A macOS development environment managed with **GNU Stow**. Each top-level directory is a Stow "package" that mirrors the home directory structure — `stow <package>` creates symlinks from `~/<package-files>` to the corresponding files here.
 
 ```
-~/dotfiles/zsh/.zshrc  ──[stow]──→  ~/.zshrc (symlink)
+~/Projects/dotfiles/zsh/.zshrc  ──[stow]──→  ~/.zshrc (symlink)
 ```
 
 ## Applying Dotfiles
@@ -17,10 +17,10 @@ A macOS development environment managed with **GNU Stow**. Each top-level direct
 curl -fsSL <url>/setup-mac | bash
 
 # Apply/re-apply dotfiles to current machine (backs up conflicts automatically)
-cd ~/dotfiles && ./install.sh
+cd ~/Projects/dotfiles && ./install.sh
 
 # Stow a single package manually
-stow -d ~/dotfiles -t ~ <package>
+stow -d ~/Projects/dotfiles -t ~ <package>
 ```
 
 ## Key Scripts
@@ -69,7 +69,7 @@ Prefix is `Ctrl+a`.
 - `tm` — attach main tmux session
 - `cc` — Claude Code CLI
 - `projects` — `cd ~/Projects`
-- `dots` — `cd ~/dotfiles`
+- `dots` — `cd ~/Projects/dotfiles`
 - `g`, `gs`, `gp`, `gpl`, `gl`, `gco`, `gcb` — git shortcuts
 - `dev`, `build`, `test`, `lint` — pnpm equivalents
 
@@ -77,7 +77,7 @@ Prefix is `Ctrl+a`.
 
 1. Create the directory mirroring `~`'s structure: e.g., `nvim/.config/nvim/init.lua`
 2. Add `stow nvim` to `install.sh`
-3. Run `./install.sh` or `stow -d ~/dotfiles -t ~ nvim`
+3. Run `./install.sh` or `stow -d ~/Projects/dotfiles -t ~ nvim`
 
 ## Claude Code Settings (`claude/.claude/settings.json`)
 

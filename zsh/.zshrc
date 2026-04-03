@@ -43,7 +43,7 @@ alias lint="pnpm lint"
 
 # Navigation
 alias projects="cd ~/Projects"
-alias dots="cd ~/dotfiles"
+alias dots="cd ~/Projects/dotfiles"
 
 # Claude
 alias cc="claude"
@@ -57,6 +57,9 @@ export CLAUDE_CONFIG_DIR="$HOME/.claude"
 
 # --- Path additions ---------------------------------------------------------
 export PATH="$HOME/.local/bin:$PATH"
+
+# --- Cursor color (magenta) -------------------------------------------------
+echo -ne "\033]12;#f5c2e7\007"
 
 # --- fzf --------------------------------------------------------------------
 source <(fzf --zsh)
