@@ -34,6 +34,9 @@ alias dots="cd ~/dotfiles"
 # Claude
 alias cc="claude"
 
+# tmux
+alias tm="tmux new-session -A -s main"
+
 # --- Environment ------------------------------------------------------------
 export EDITOR="code --wait"
 export CLAUDE_CONFIG_DIR="$HOME/.claude"
