@@ -22,14 +22,29 @@ remote_projects=$(gh repo list "$GH_USER" --limit 100 --json name --jq '.[].name
 
 projects=$(echo -e "${local_projects}\n${remote_projects}" | sort -u | grep -v '^$')
 
+# Write to temp file so the dynamic reload binding can reference it
+tmpfile=$(mktemp)
+echo "$projects" > "$tmpfile"
+trap "rm -f $tmpfile" EXIT
+
 # --- fzf selection ----------------------------------------------------------
-# --print-query always outputs the typed query on line 1, selection on line 2
-fzf_out=$(echo "$projects" | fzf --print-query --prompt="  project > " --height=50% --reverse --border --no-info) || true
+# Dynamically prepend "Create: <query>" as the user types
+fzf_out=$(cat "$tmpfile" | fzf \
+    --print-query \
+    --prompt="  project > " \
+    --height=50% \
+    --reverse \
+    --border \
+    --no-info \
+    --bind "change:reload(if [ -n '{q}' ]; then echo 'Create: {q}'; fi; cat '$tmpfile')") || true
 
 query=$(echo "$fzf_out" | sed -n '1p')
 selected=$(echo "$fzf_out" | sed -n '2p')
 
-# If nothing was selected but user typed something, create that project
+# Strip "Create: " prefix if the user selected that option
+[[ "$selected" == "Create: "* ]] && selected="${selected#Create: }"
+
+# Fallback: unmatched enter with a typed query
 [[ -z "$selected" && -n "$query" ]] && selected="$query"
 [[ -z "$selected" ]] && exit 0
 
