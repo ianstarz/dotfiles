@@ -20,16 +20,18 @@ local_projects=$(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 -type d -exec base
 
 remote_projects=$(gh repo list "$GH_USER" --limit 100 --json name --jq '.[].name' 2>/dev/null | sort) || remote_projects=""
 
-projects=$(echo -e "[new project]\n$(echo -e "${local_projects}\n${remote_projects}" | sort -u | grep -v '^$')")
+projects=$(echo -e "${local_projects}\n${remote_projects}" | sort -u | grep -v '^$')
 
 # --- fzf selection ----------------------------------------------------------
-selected=$(echo "$projects" | fzf --prompt="  project > " --height=50% --reverse --border --no-info) || exit 0
+# --print-query always outputs the typed query on line 1, selection on line 2
+fzf_out=$(echo "$projects" | fzf --print-query --prompt="  project > " --height=50% --reverse --border --no-info) || true
 
-# --- Handle [new project] --------------------------------------------------
-if [[ "$selected" == "[new project]" ]]; then
-    read -rp "Project name: " selected
-    [[ -z "$selected" ]] && exit 0
-fi
+query=$(echo "$fzf_out" | sed -n '1p')
+selected=$(echo "$fzf_out" | sed -n '2p')
+
+# If nothing was selected but user typed something, create that project
+[[ -z "$selected" && -n "$query" ]] && selected="$query"
+[[ -z "$selected" ]] && exit 0
 
 PROJECT_PATH="$PROJECTS_DIR/$selected"
 WINDOW_NAME="$selected"
