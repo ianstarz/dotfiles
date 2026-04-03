@@ -97,5 +97,6 @@ tmux split-window -t "$SESSION:$WINDOW_NAME.3" -v -p 50 -c "$PROJECT_PATH"
 tmux send-keys -t "$SESSION:$WINDOW_NAME.3" "watch -n2 'git log --oneline -20'" Enter
 tmux send-keys -t "$SESSION:$WINDOW_NAME.4" "watch -n2 'git status'" Enter
 
-# Focus the main left pane
+# Start claude in the main left pane and focus it
+tmux send-keys -t "$SESSION:$WINDOW_NAME.1" "claude" Enter
 tmux select-pane -t "$SESSION:$WINDOW_NAME.1"
