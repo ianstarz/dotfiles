@@ -6,19 +6,20 @@
 
 set -euo pipefail
 
+# Ensure PATH includes homebrew and local bin
+export PATH="/opt/homebrew/bin:$HOME/.local/bin:$PATH"
+
 PROJECTS_DIR="$HOME/Projects"
 GH_USER="ianstarz"
+SESSION="main"
 
 mkdir -p "$PROJECTS_DIR"
 
 # --- Build project list -----------------------------------------------------
-# Local projects
 local_projects=$(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
 
-# Remote repos (fetch in background, timeout after 3s)
 remote_projects=$(gh repo list "$GH_USER" --limit 100 --json name --jq '.[].name' 2>/dev/null | sort) || remote_projects=""
 
-# Merge and deduplicate, add [new] option at the top
 projects=$(echo -e "[new project]\n$(echo -e "${local_projects}\n${remote_projects}" | sort -u | grep -v '^$')")
 
 # --- fzf selection ----------------------------------------------------------
@@ -31,10 +32,10 @@ if [[ "$selected" == "[new project]" ]]; then
 fi
 
 PROJECT_PATH="$PROJECTS_DIR/$selected"
+WINDOW_NAME="$selected"
 
 # --- Ensure project exists locally ------------------------------------------
 if [[ ! -d "$PROJECT_PATH" ]]; then
-    # Check if repo exists on GitHub
     if gh repo view "$GH_USER/$selected" &>/dev/null; then
         echo "Cloning $GH_USER/$selected..."
         gh repo clone "$GH_USER/$selected" "$PROJECT_PATH"
@@ -50,27 +51,26 @@ if [[ ! -d "$PROJECT_PATH" ]]; then
 fi
 
 # --- Open tmux window -------------------------------------------------------
-WINDOW_NAME="$selected"
 
 # If window already exists, just switch to it
-if tmux list-windows -F '#{window_name}' 2>/dev/null | grep -qx "$WINDOW_NAME"; then
-    tmux select-window -t "$WINDOW_NAME"
+if tmux list-windows -t "$SESSION" -F '#{window_name}' 2>/dev/null | grep -qx "$WINDOW_NAME"; then
+    tmux select-window -t "$SESSION:$WINDOW_NAME"
     exit 0
 fi
 
 # Create new window with dev layout
-tmux new-window -n "$WINDOW_NAME" -c "$PROJECT_PATH"
+tmux new-window -t "$SESSION" -n "$WINDOW_NAME" -c "$PROJECT_PATH"
 
 # Split right 35% for side panes
-tmux split-window -t "$WINDOW_NAME" -h -p 35 -c "$PROJECT_PATH"
+tmux split-window -t "$SESSION:$WINDOW_NAME" -h -p 35 -c "$PROJECT_PATH"
 
 # Split right pane into 3 equal horizontal panes
-tmux split-window -t "$WINDOW_NAME.2" -v -p 66 -c "$PROJECT_PATH"
-tmux split-window -t "$WINDOW_NAME.3" -v -p 50 -c "$PROJECT_PATH"
+tmux split-window -t "$SESSION:$WINDOW_NAME.2" -v -p 66 -c "$PROJECT_PATH"
+tmux split-window -t "$SESSION:$WINDOW_NAME.3" -v -p 50 -c "$PROJECT_PATH"
 
 # Start git watches in the bottom two right panes
-tmux send-keys -t "$WINDOW_NAME.3" "watch -n2 'git log --oneline -20'" Enter
-tmux send-keys -t "$WINDOW_NAME.4" "watch -n2 'git status'" Enter
+tmux send-keys -t "$SESSION:$WINDOW_NAME.3" "watch -n2 'git log --oneline -20'" Enter
+tmux send-keys -t "$SESSION:$WINDOW_NAME.4" "watch -n2 'git status'" Enter
 
 # Focus the main left pane
-tmux select-pane -t "$WINDOW_NAME.1"
+tmux select-pane -t "$SESSION:$WINDOW_NAME.1"
