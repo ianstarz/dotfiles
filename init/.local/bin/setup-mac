@@ -192,7 +192,6 @@ NPM_GLOBALS=(
     typescript
     tsx
     vercel
-    supabase
     wrangler
 )
 
@@ -201,8 +200,12 @@ for pkg in "${NPM_GLOBALS[@]}"; do
         skip "$pkg"
     else
         info "Installing $pkg..."
-        npm install -g "$pkg" 2>/dev/null
-        ok "$pkg"
+        if npm install -g "$pkg" 2>&1 | tail -3; then
+            ok "$pkg"
+        else
+            fail "$pkg — npm install failed"
+            warn "Continuing with remaining packages..."
+        fi
     fi
 done
 
@@ -224,7 +227,7 @@ fi
 # ============================================================================
 step "Phase 4: Claude Code"
 
-if command_exists claude; then
+if command_exists claude || [[ -f "$HOME/.local/bin/claude" ]]; then
     skip "Claude Code CLI"
 else
     info "Installing Claude Code..."
